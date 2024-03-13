@@ -17,6 +17,8 @@
 #define buttonPin A1
 #define photoPin A2
 
+const char dayInWords[7][12] = {"NIADZIELIA", "PANIADZIELAK", "AUTORAK", "SERADA", "CZACWIER", "PIATNICA", "SUBOTA"};
+
 short mode;
 int step;
 float value, oldValue;
@@ -43,8 +45,8 @@ void setup() {
   lcd.createChar(2, customChar6);
   lcd.createChar(3, customChar15);
   lcd.backlight();
-  
-//  Serial.begin(9600);
+
+  //  Serial.begin(9600);
 }
 
 void loop() {
@@ -84,18 +86,18 @@ void loop() {
     else lcd.noBacklight();
   }
 
-//  Serial.print("Mode: ");
-//  Serial.print(mode);
-//  Serial.print(", step=");
-//  Serial.print(step);
-//  Serial.print(", light=");
-//  Serial.print(analogRead(photoPin));
-//  Serial.print(", potentiometer=");
-//  Serial.print(analogRead(potentPin));
-//  Serial.print(", oldvalue=");
-//  Serial.print(oldValue);
-//  Serial.print(", value=");
-//  Serial.println(value);
+  //  Serial.print("Mode: ");
+  //  Serial.print(mode);
+  //  Serial.print(", step=");
+  //  Serial.print(step);
+  //  Serial.print(", light=");
+  //  Serial.print(analogRead(photoPin));
+  //  Serial.print(", potentiometer=");
+  //  Serial.print(analogRead(potentPin));
+  //  Serial.print(", oldvalue=");
+  //  Serial.print(oldValue);
+  //  Serial.print(", value=");
+  //  Serial.println(value);
 
   delay(TIMESTEP);
 }
@@ -113,6 +115,8 @@ void refreshLCD() {
     char str[16];
     sprintf(str, "%02d/%02d/%04d %02d:%02d", now.Day(), now.Month(), now.Year(), now.Hour(), now.Minute());
     lcd.print(str);
+    lcd.setCursor(0, 1);
+    lcd.print(dayInWords[now.DayOfWeek()]);
   }
   else if (mode == 1) {
     lcd.clear();
@@ -145,6 +149,7 @@ void switchMode() {
     lcd.clear();
     lcd.backlight();
     refreshLEDs();
+    refreshLCD();
   }
   else if (mode == 1) {
     step = STEP_TEMPERATURE;
@@ -159,6 +164,6 @@ void switchMode() {
 void showRGB() {
   lcd.setCursor(0, 1);
   char str[16];
-  sprintf(str, "(%d, %d, %d)", red, green, blue);
+  sprintf(str, "(%3d, %3d, %3d)", red, green, blue);
   lcd.print(str);
 }
