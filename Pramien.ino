@@ -10,7 +10,6 @@
 #define NUM_LEDS 8
 #define STEP_TEMPERATURE 250
 #define STEP_WAVELENGTH 5
-#define STEP_STROBE 1
 #define POTENT_MIN 10
 #define POTENT_MAX 1005
 #define TIMESTEP 20
@@ -20,12 +19,11 @@
 
 short mode;
 int step;
-int value, oldValue;
+float value, oldValue;
 
 int lcdOnDelay = 5000;
 
 long time;
-long strobeTime;
 
 RtcDateTime now;
 
@@ -35,9 +33,9 @@ ThreeWire myWire(7, 6, 8);        // DAT, CLK, RST
 RtcDS1302<ThreeWire> rtc(myWire);    // RTC Object
 
 void setup() {
-  mode = 0;
-  step = STEP_TEMPERATURE;
   FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS).setCorrection(0xFF5270);
+  mode = 0;
+  step = 0;
   rtc.Begin();
   lcd.init();
   lcd.createChar(0, customChar3);
@@ -50,57 +48,50 @@ void setup() {
 
 void loop() {
   int potentiometer = constrain(analogRead(potentPin), 15, 980);
-  oldValue = value;
   if (analogRead(buttonPin) > 800) {
-    switchMode();
-    delay(500);
+    delay(100);
+    if (analogRead(buttonPin) > 800)
+      switchMode();
   }
   if (mode == 0) {
     now = rtc.GetDateTime();
     refreshLCD();
   }
   else if (mode == 1) {
+    oldValue = value;
     value = map(potentiometer, POTENT_MAX, POTENT_MIN, 1000, 6500);
     value = round(value / step) * step;
     kelvinToRgb(value);
   }
   else if (mode == 2) {
+    oldValue = value;
     value = map(potentiometer, POTENT_MAX, POTENT_MIN, 785, 380);
     value = round(value / step) * step;
     nmToRgb(value);
   }
-  else if (mode == 3) {
-    value = map(potentiometer, POTENT_MAX, POTENT_MIN, 1, 50);
-    value = round(value / step) * step;
-    if ((millis() - time) >= 500.0 / value) {
-      if (intensity == 255) {
-        intensity = 0;
-      } else {
-        intensity = 255;
-      }
-      time = millis();
-      red = intensity;
-      green = intensity;
-      blue = intensity;
-      refreshLEDs();
-    }
-  }
-  if (abs(value - oldValue) >= step) {
-    if (mode != 0) {
-      lcd.backlight();
-      refreshLEDs();
-      time = millis();
-    }
+  if (abs(value - oldValue) >= step && mode != 0) {
+    lcd.backlight();
+    refreshLEDs();
+    Serial.println("Refreshed: LEDS");
+    time = millis();
     refreshLCD();
   }
   if ((millis() - time) >= lcdOnDelay && mode != 0)
     lcd.noBacklight();
-  Serial.print("Mode is ");
+
+  Serial.print("Mode: ");
   Serial.print(mode);
-  Serial.print(", light ");
+  Serial.print(", step=");
+  Serial.print(step);
+  Serial.print(", light=");
   Serial.print(analogRead(photoPin));
-  Serial.print(", potentiometer ");
-  Serial.println(analogRead(potentPin));
+  Serial.print(", potentiometer=");
+  Serial.print(analogRead(potentPin));
+  Serial.print(", oldvalue=");
+  Serial.print(oldValue);
+  Serial.print(", value=");
+  Serial.println(value);
+
   delay(TIMESTEP);
 }
 
@@ -124,10 +115,7 @@ void refreshLCD() {
     lcd.print(value);
     lcd.print(" K");
     kelvinToRgb(value);
-    //  lcd.setCursor(0, 1);
-    //  char str[16];
-    //  sprintf(str, "(%d, %d, %d)", red, green, blue);
-    //  lcd.print(str);
+    showRGB();
   }
   else if (mode == 2) {
     lcd.clear();
@@ -135,33 +123,36 @@ void refreshLCD() {
     lcd.print(value);
     lcd.print(" nm");
     nmToRgb(value);
-
-  }
-  else if (mode == 3) {
-    lcd.clear();
-    lcd.setCursor(5, 0);
-    lcd.print(value);
-    lcd.createChar(4, customChar2);
-    lcd.setCursor(8, 0); // move cursor to (2, 0)
-    lcd.write((byte)4);  // print the custom char at (2, 0)
-    lcd.createChar(5, customChar12);
-    lcd.setCursor(9, 0); // move cursor to (2, 0)
-    lcd.write((byte)5);  // print the custom char at (2, 0)
+    showRGB();
   }
 }
 
 void switchMode() {
   mode++;
-  if (mode > 3) {
+  if (mode > 2) {
     mode = 0;
   }
-  if (mode == 1) {
+  if (mode == 0) {
+    step = 0;
+    red = 0;
+    green = 0;
+    blue = 0;
+    lcd.clear();
+    refreshLEDs();
+  }
+  else if (mode == 1) {
     step = STEP_TEMPERATURE;
+    intensity = 255;
   }
   else if (mode == 2) {
     step = STEP_WAVELENGTH;
+    intensity = 255;
   }
-  else if (mode == 3) {
-    step = STEP_STROBE;
-  }
+}
+
+void showRGB() {
+  lcd.setCursor(0, 1);
+  char str[16];
+  sprintf(str, "(%d, %d, %d)", red, green, blue);
+  lcd.print(str);
 }
