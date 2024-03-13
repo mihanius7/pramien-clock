@@ -43,7 +43,8 @@ void setup() {
   lcd.createChar(2, customChar6);
   lcd.createChar(3, customChar15);
   lcd.backlight();
-  Serial.begin(9600);
+  
+//  Serial.begin(9600);
 }
 
 void loop() {
@@ -55,7 +56,6 @@ void loop() {
   }
   if (mode == 0) {
     now = rtc.GetDateTime();
-    refreshLCD();
   }
   else if (mode == 1) {
     oldValue = value;
@@ -76,21 +76,26 @@ void loop() {
     time = millis();
     refreshLCD();
   }
-  if ((millis() - time) >= lcdOnDelay && mode != 0)
-    lcd.noBacklight();
+  if ((millis() - time) >= lcdOnDelay) {
+    if (mode == 0) {
+      refreshLCD();
+      time = millis();
+    }
+    else lcd.noBacklight();
+  }
 
-  Serial.print("Mode: ");
-  Serial.print(mode);
-  Serial.print(", step=");
-  Serial.print(step);
-  Serial.print(", light=");
-  Serial.print(analogRead(photoPin));
-  Serial.print(", potentiometer=");
-  Serial.print(analogRead(potentPin));
-  Serial.print(", oldvalue=");
-  Serial.print(oldValue);
-  Serial.print(", value=");
-  Serial.println(value);
+//  Serial.print("Mode: ");
+//  Serial.print(mode);
+//  Serial.print(", step=");
+//  Serial.print(step);
+//  Serial.print(", light=");
+//  Serial.print(analogRead(photoPin));
+//  Serial.print(", potentiometer=");
+//  Serial.print(analogRead(potentPin));
+//  Serial.print(", oldvalue=");
+//  Serial.print(oldValue);
+//  Serial.print(", value=");
+//  Serial.println(value);
 
   delay(TIMESTEP);
 }
@@ -138,6 +143,7 @@ void switchMode() {
     green = 0;
     blue = 0;
     lcd.clear();
+    lcd.backlight();
     refreshLEDs();
   }
   else if (mode == 1) {
