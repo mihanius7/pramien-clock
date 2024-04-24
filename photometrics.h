@@ -23,7 +23,7 @@ void kelvinToRgb(int temperature) {
   blue = constrain(blue, 0, intensity);
 }
 
-void nmToRgb(int wavelength) {
+void nmToRgb(float wavelength) {
   float gamma = 0.80;
   float factor;
   float r, g, b;
